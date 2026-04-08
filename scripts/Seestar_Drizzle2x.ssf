@@ -50,9 +50,13 @@ subsky -rbf -smooth=0.5 -samples=15
 # Autostretch for quick preview
 autostretch
 
-# Save results
-save Seestar_drizzle_result
-savejpg Seestar_drizzle_preview
-savetif Seestar_drizzle_result_16bit
+# Save results to stacked/ directory
+save stacked/Seestar_drizzle_result
+savejpg stacked/Seestar_drizzle_preview
+savetif stacked/Seestar_drizzle_result_16bit
 
 close
+
+# NOTE: The process/ directory contains intermediate
+# working files and can be safely deleted after
+# verifying your results in stacked/.

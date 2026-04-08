@@ -42,6 +42,14 @@ my_target/
     ...
 ```
 
+After running a script, two directories are created:
+
+```
+my_target/
+  stacked/         # Final results (FITS, TIFF, JPEG)
+  process/         # Intermediate working files (can be deleted)
+```
+
 **Important:** The Seestar saves individual sub-exposures in its internal storage under a path like `Seestar S50/<target>/sub/`. Copy the `.fit` files from there into the `lights/` directory.
 
 ## How to Use
@@ -53,7 +61,8 @@ my_target/
 2. **Organize** your Seestar sub-exposures into the directory structure shown above.
 3. **Open Siril** and set the working directory to your target folder (e.g., `my_target/`).
 4. **Run** the script from the Scripts menu in Siril.
-5. **Results** will be saved in the working directory as FITS, TIFF, and JPEG files.
+5. **Results** will be saved in the `stacked/` subdirectory as FITS, TIFF, and JPEG files.
+6. **Clean up** by deleting the `process/` directory after verifying your results.
 
 ## Choosing a Script
 
