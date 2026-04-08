@@ -1,0 +1,62 @@
+############################################
+# Seestar S50 - Basic Stack with SPCC
+# Plate solves the stack, then applies
+# Spectrophotometric Color Calibration and
+# automatic background extraction
+#
+# No calibration frames (darks/flats/biases)
+#
+# Directory structure expected:
+#   workdir/
+#     lights/    - Seestar sub-exposures (.fit)
+#
+# REQUIREMENTS:
+#   - Siril 1.2.0+
+#   - Internet connection (for plate solving
+#     and SPCC star catalog queries)
+#   - Siril must have local star catalogs or
+#     network access for plate solving
+#
+# Set your working directory in Siril to
+# the parent folder containing lights/
+############################################
+requires 1.2.0
+
+# Convert light frames
+cd lights
+convert light -out=../process
+cd ../process
+
+# Register (align) all frames
+register light
+
+# Stack with sigma clipping rejection
+stack r_light rej 3 3 -norm=addscale -output_norm -weight=wfwhm
+
+cd ..
+load process/r_light_stacked
+
+# Plate solve the stacked image
+# Seestar S50: focal length ~250mm, pixel size 2.9um
+platesolve -focal=250 -pixelsize=2.9 -limitmag=18
+
+# Spectrophotometric Color Calibration
+# Uses plate solve astrometric solution to match
+# star colors against a spectral catalog
+spcc
+
+# Remove green noise (common in OSC cameras)
+rmgreen 1
+
+# Automatic background extraction
+subsky -rbf -smooth=0.5 -samples=15
+
+# Autostretch for quick preview
+autostretch
+
+# Save results
+save Seestar_SPCC_result
+savejpg Seestar_SPCC_preview
+savetif Seestar_SPCC_result_16bit
+
+close
