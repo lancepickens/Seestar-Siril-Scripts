@@ -1,0 +1,20 @@
+# Seestar S50 defaults
+optics:
+  focal_length: 250       # mm
+  pixel_size: 2.9         # um
+
+platesolve:
+  limit_mag: 18
+
+stacking:
+  sigma_high: 3
+  sigma_low: 3
+  normalization: addscale
+
+frame_selection:
+  fwhm_percent: 80
+  roundness_percent: 90
+
+background_extraction:
+  smooth: 0.5
+  samples: 15
