@@ -8,13 +8,13 @@ These scripts automate the stacking and processing pipeline so you can get bette
 
 - **Siril 1.2.0** or later
 - Seestar S50 sub-exposure FITS files (`.fit`)
+- Internet connection or local star catalogs (for plate solving and SPCC)
 
 ## Scripts
 
 | Script | Description |
 |--------|-------------|
 | `Seestar_BasicStack.ssf` | Simple stacking with no calibration frames. Best starting point for beginners. |
-| `Seestar_BasicStack_SPCC.ssf` | Basic stack with plate solving, SPCC color calibration, and background extraction. |
 | `Seestar_WithDarks.ssf` | Stacking with dark frame subtraction for reduced thermal noise. |
 | `Seestar_FullCalibration.ssf` | Full calibration pipeline using darks, flats, and bias frames. |
 | `Seestar_Comet.ssf` | Comet-specific processing that registers on the comet nucleus. |
@@ -58,7 +58,6 @@ my_target/
 ## Choosing a Script
 
 - **First time?** Start with `Seestar_BasicStack.ssf` -- it requires only your light frames.
-- **Accurate colors?** Use `Seestar_BasicStack_SPCC.ssf` for plate-solved SPCC color calibration (requires internet).
 - **Noisy images?** Use `Seestar_WithDarks.ssf` if you have matching dark frames.
 - **Best quality?** Use `Seestar_FullCalibration.ssf` with a full set of calibration frames.
 - **Windy night?** Use `Seestar_FrameSelect.ssf` to automatically discard bad frames.

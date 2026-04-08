@@ -12,6 +12,9 @@
 # the comet position on the first and last
 # frames. Follow the on-screen prompts.
 #
+# Requires internet connection or local star
+# catalogs for plate solving and SPCC.
+#
 # Set your working directory in Siril to
 # the parent folder containing lights/
 ############################################
@@ -33,8 +36,12 @@ stack r_light rej 3 3 -norm=addscale -output_norm -filter-wfwhm=90% -comet
 cd ..
 load process/r_light_stacked
 
-# Remove green noise
-rmgreen 1
+# Plate solve the stacked image
+# Seestar S50: focal length ~250mm, pixel size 2.9um
+platesolve -focal=250 -pixelsize=2.9 -limitmag=18
+
+# Spectrophotometric Color Calibration
+spcc
 
 # Auto background extraction
 subsky -rbf -smooth=0.5 -samples=15
