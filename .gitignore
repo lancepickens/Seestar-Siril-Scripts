@@ -10,6 +10,11 @@ tmp/
 *_result.fit
 *_result.fits
 
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
 # OS files
 .DS_Store
 Thumbs.db
