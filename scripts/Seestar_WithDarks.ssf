@@ -1,0 +1,54 @@
+############################################
+# Seestar S50 - Stacking with Dark Frames
+#
+# Directory structure expected:
+#   workdir/
+#     lights/    - Seestar sub-exposures (.fit)
+#     darks/     - Dark frames (.fit)
+#
+# Dark frames should match the same exposure
+# time and temperature as your lights.
+# Set your working directory in Siril to
+# the parent folder containing lights/ & darks/
+############################################
+requires 1.2.0
+
+# Stack dark frames into master dark
+cd darks
+convert dark -out=../process
+cd ../process
+stack dark rej 3 3 -nonorm
+cd ..
+
+# Convert light frames
+cd lights
+convert light -out=../process
+cd ../process
+
+# Calibrate lights with master dark
+calibrate light -dark=dark_stacked -cc=dark -sighi=3 -siglo=3
+
+# Register calibrated lights
+register pp_light
+
+# Stack with sigma clipping rejection
+stack r_pp_light rej 3 3 -norm=addscale -output_norm -weight=wfwhm
+
+cd ..
+load process/r_pp_light_stacked
+
+# Remove green noise
+rmgreen 1
+
+# Auto background extraction
+subsky -rbf -smooth=0.5 -samples=15
+
+# Autostretch for quick preview
+autostretch
+
+# Save results
+save Seestar_result
+savejpg Seestar_preview
+savetif Seestar_result_16bit
+
+close

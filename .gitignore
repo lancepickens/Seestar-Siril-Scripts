@@ -1,0 +1,23 @@
+# Siril working files
+*.seq
+*.ser
+process/
+tmp/
+
+# Siril output files (keep scripts, ignore processed data)
+*_stacked.fit
+*_stacked.fits
+*_result.fit
+*_result.fits
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Common image outputs (from processing)
+*.tif
+*.tiff
+*.jpg
+*.jpeg
+*.png

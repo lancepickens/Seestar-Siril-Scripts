@@ -1,0 +1,70 @@
+############################################
+# Seestar S50 - Full Calibration Pipeline
+# Uses darks, flats, and bias/offset frames
+#
+# Directory structure expected:
+#   workdir/
+#     lights/    - Seestar sub-exposures (.fit)
+#     darks/     - Dark frames (.fit)
+#     flats/     - Flat frames (.fit)
+#     biases/    - Bias/offset frames (.fit)
+#
+# Set your working directory in Siril to
+# the parent folder containing all subdirs.
+############################################
+requires 1.2.0
+
+# Stack bias/offset frames into master bias
+cd biases
+convert bias -out=../process
+cd ../process
+stack bias rej 3 3 -nonorm
+cd ..
+
+# Stack dark frames into master dark
+cd darks
+convert dark -out=../process
+cd ../process
+stack dark rej 3 3 -nonorm
+cd ..
+
+# Pre-process and stack flat frames
+cd flats
+convert flat -out=../process
+cd ../process
+calibrate flat -bias=bias_stacked
+stack pp_flat rej 3 3 -norm=mul
+cd ..
+
+# Convert light frames
+cd lights
+convert light -out=../process
+cd ../process
+
+# Calibrate lights with master dark, flat, and bias
+calibrate light -dark=dark_stacked -flat=pp_flat_stacked -bias=bias_stacked -cc=dark -sighi=3 -siglo=3
+
+# Register calibrated lights
+register pp_light
+
+# Stack with sigma clipping rejection
+stack r_pp_light rej 3 3 -norm=addscale -output_norm -weight=wfwhm
+
+cd ..
+load process/r_pp_light_stacked
+
+# Remove green noise
+rmgreen 1
+
+# Auto background extraction
+subsky -rbf -smooth=0.5 -samples=15
+
+# Autostretch for quick preview
+autostretch
+
+# Save results
+save Seestar_result
+savejpg Seestar_preview
+savetif Seestar_result_16bit
+
+close

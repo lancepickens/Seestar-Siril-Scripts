@@ -1,0 +1,42 @@
+############################################
+# Seestar S50 - Basic Stacking
+# No calibration frames (darks/flats/biases)
+#
+# Directory structure expected:
+#   workdir/
+#     lights/    - Seestar sub-exposures (.fit)
+#
+# Set your working directory in Siril to
+# the parent folder containing lights/
+############################################
+requires 1.2.0
+
+# Convert light frames
+cd lights
+convert light -out=../process
+cd ../process
+
+# Register (align) all frames
+register light
+
+# Stack with sigma clipping rejection
+stack r_light rej 3 3 -norm=addscale -output_norm -weight=wfwhm
+
+cd ..
+load process/r_light_stacked
+
+# Remove green noise (common in OSC cameras)
+rmgreen 1
+
+# Auto background extraction
+subsky -rbf -smooth=0.5 -samples=15
+
+# Autostretch for quick preview
+autostretch
+
+# Save results
+save Seestar_result
+savejpg Seestar_preview
+savetif Seestar_result_16bit
+
+close

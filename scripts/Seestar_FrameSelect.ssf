@@ -1,0 +1,50 @@
+############################################
+# Seestar S50 - Selective Stacking
+# Filters out poor quality frames by FWHM
+# and roundness before stacking
+#
+# Directory structure expected:
+#   workdir/
+#     lights/    - Seestar sub-exposures (.fit)
+#
+# This script keeps only the best 80% of
+# frames by FWHM and best 90% by roundness.
+# Adjust the percentages to be more or less
+# aggressive with frame selection.
+#
+# Set your working directory in Siril to
+# the parent folder containing lights/
+############################################
+requires 1.2.0
+
+# Convert light frames
+cd lights
+convert light -out=../process
+cd ../process
+
+# Register (align) all frames
+register light
+
+# Stack with aggressive frame selection
+# -filter-wfwhm=80% keeps the best 80% by star FWHM
+# -filter-round=90% keeps the best 90% by star roundness
+stack r_light rej 3 3 -norm=addscale -output_norm -weight=wfwhm -filter-wfwhm=80% -filter-round=90%
+
+cd ..
+load process/r_light_stacked
+
+# Remove green noise
+rmgreen 1
+
+# Auto background extraction
+subsky -rbf -smooth=0.5 -samples=15
+
+# Autostretch for quick preview
+autostretch
+
+# Save results
+save Seestar_best_frames_result
+savejpg Seestar_best_frames_preview
+savetif Seestar_best_frames_result_16bit
+
+close

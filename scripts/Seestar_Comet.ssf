@@ -1,0 +1,50 @@
+############################################
+# Seestar S50 - Comet Processing
+# Registers and stacks on the comet nucleus
+# to produce a sharp comet with trailed stars
+#
+# Directory structure expected:
+#   workdir/
+#     lights/    - Seestar sub-exposures (.fit)
+#
+# NOTE: After running the register step,
+# Siril will open a dialog for you to mark
+# the comet position on the first and last
+# frames. Follow the on-screen prompts.
+#
+# Set your working directory in Siril to
+# the parent folder containing lights/
+############################################
+requires 1.2.0
+
+# Convert light frames
+cd lights
+convert light -out=../process
+cd ../process
+
+# First, do a standard star registration
+# (needed before comet registration)
+register light
+
+# Stack with comet registration
+# The -filter-wfwhm flag removes the worst frames
+stack r_light rej 3 3 -norm=addscale -output_norm -filter-wfwhm=90% -comet
+
+cd ..
+load process/r_light_stacked
+
+# Remove green noise
+rmgreen 1
+
+# Auto background extraction
+subsky -rbf -smooth=0.5 -samples=15
+
+# Autostretch for quick preview
+autostretch
+
+# Save results
+save Seestar_comet_result
+savejpg Seestar_comet_preview
+savetif Seestar_comet_result_16bit
+
+close

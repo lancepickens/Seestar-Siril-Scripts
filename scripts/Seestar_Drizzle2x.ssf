@@ -1,0 +1,51 @@
+############################################
+# Seestar S50 - 2x Drizzle Stacking
+# Uses drizzle integration to increase
+# resolution of the final stacked image
+#
+# Directory structure expected:
+#   workdir/
+#     lights/    - Seestar sub-exposures (.fit)
+#
+# Drizzle works best when you have many
+# sub-exposures (50+) with small dithering
+# between frames. The Seestar's tracking
+# drift provides natural dithering.
+#
+# NOTE: Output file size will be 4x larger
+# due to the doubled resolution.
+#
+# Set your working directory in Siril to
+# the parent folder containing lights/
+############################################
+requires 1.2.0
+
+# Convert light frames
+cd lights
+convert light -out=../process
+cd ../process
+
+# Register with drizzle enabled
+register light -drizzle
+
+# Stack with sigma clipping and frame selection
+stack r_light rej 3 3 -norm=addscale -output_norm -weight=wfwhm -filter-wfwhm=90%
+
+cd ..
+load process/r_light_stacked
+
+# Remove green noise
+rmgreen 1
+
+# Auto background extraction
+subsky -rbf -smooth=0.5 -samples=15
+
+# Autostretch for quick preview
+autostretch
+
+# Save results
+save Seestar_drizzle_result
+savejpg Seestar_drizzle_preview
+savetif Seestar_drizzle_result_16bit
+
+close
