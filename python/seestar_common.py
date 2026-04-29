@@ -28,7 +28,7 @@ DEFAULT_CONFIG = {
         "limit_mag": 18,
     },
     "spcc": {
-        "sensor": "IMX462",
+        "sensor": "ZWO Seestar S50",
         "filter": "UV/IR Block",
     },
     "stacking": {
@@ -267,7 +267,7 @@ def stack_sequence(siril, seq_name, config, comet=False,
 def post_process(siril, workdir, config):
     """Run the common post-processing pipeline on the loaded image.
 
-    Pipeline: platesolve -> SPCC -> background extraction -> autostretch
+    Pipeline: platesolve -> SPCC -> background extraction
     """
     optics = config["optics"]
     ps = config["platesolve"]
@@ -282,14 +282,52 @@ def post_process(siril, workdir, config):
               f"-limitmag={ps['limit_mag']}")
 
     siril.cmd("spcc",
-              f"-oscsensor={spcc_cfg['sensor']}",
+              f'-oscsensor="{spcc_cfg["sensor"]}"',
               f'-oscfilter="{spcc_cfg["filter"]}"')
 
     siril.cmd("subsky", "-rbf",
               f"-smooth={bg['smooth']}",
               f"-samples={bg['samples']}")
 
-    siril.cmd("autostretch")
+
+def read_fits_keyword(filepath, keyword):
+    """Read a keyword value from a FITS file header."""
+    target = keyword.ljust(8)[:8]
+    try:
+        with open(filepath, "rb") as f:
+            while True:
+                block = f.read(2880)
+                if len(block) < 2880:
+                    return None
+                for i in range(0, 2880, 80):
+                    card = block[i:i + 80].decode("ascii", errors="replace")
+                    if card[:8].strip() == "END":
+                        return None
+                    if card[:8] == target and card[8] == "=":
+                        value_str = card[10:].split("/")[0].strip()
+                        if value_str.startswith("'"):
+                            return value_str.strip("' ")
+                        try:
+                            return float(value_str)
+                        except ValueError:
+                            return value_str
+    except (OSError, IOError):
+        return None
+
+
+def format_integration_time(seconds):
+    """Format integration time in seconds as a filename-safe string."""
+    if seconds is None or seconds <= 0:
+        return None
+    total = int(seconds)
+    hours = total // 3600
+    minutes = (total % 3600) // 60
+    secs = total % 60
+    if hours > 0:
+        return f"{hours}h{minutes:02d}m{secs:02d}s"
+    if minutes > 0:
+        return f"{minutes}m{secs:02d}s"
+    return f"{secs}s"
 
 
 def save_results(siril, workdir, output_name):
@@ -301,13 +339,19 @@ def save_results(siril, workdir, output_name):
 
 def run_pipeline(siril, workdir, config, output_name, seq_name):
     """Run the final steps: load stacked, post-process, save, cleanup."""
+    stacked_path = os.path.join(workdir, "process", f"r_{seq_name}_stacked.fit")
+    livetime = read_fits_keyword(stacked_path, "LIVETIME")
+    time_suffix = format_integration_time(livetime)
+
     siril.cmd("cd", workdir)
     siril.cmd("load", f"process/r_{seq_name}_stacked")
 
     post_process(siril, workdir, config)
-    save_results(siril, workdir, output_name)
+
+    full_name = f"{output_name}_{time_suffix}" if time_suffix else output_name
+    save_results(siril, workdir, full_name)
 
     siril.cmd("close")
     cleanup_process(workdir)
 
-    siril.log(f"Done! Results saved to stacked/{output_name}", s.LogColor.GREEN)
+    siril.log(f"Done! Results saved to stacked/{full_name}", s.LogColor.GREEN)

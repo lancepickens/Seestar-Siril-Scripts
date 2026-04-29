@@ -7,7 +7,9 @@ import pytest
 from seestar_common import (
     DEFAULT_CONFIG,
     convert_and_calibrate_lights,
+    format_integration_time,
     post_process,
+    read_fits_keyword,
     register_sequence,
     run_pipeline,
     save_results,
@@ -191,10 +193,9 @@ class TestPostProcess:
     def test_pipeline_order(self, mock_siril, tmp_workdir):
         post_process(mock_siril, str(tmp_workdir), DEFAULT_CONFIG)
         cmds = [args[0] for args in mock_siril.cmd_calls]
-        # Verify order: cd -> platesolve -> spcc -> subsky -> autostretch
         assert cmds.index("platesolve") < cmds.index("spcc")
         assert cmds.index("spcc") < cmds.index("subsky")
-        assert cmds.index("subsky") < cmds.index("autostretch")
+        assert "autostretch" not in cmds
 
     def test_uses_config_values(self, mock_siril, tmp_workdir):
         post_process(mock_siril, str(tmp_workdir), DEFAULT_CONFIG)
@@ -218,3 +219,65 @@ class TestSaveResults:
         save_results(mock_siril, str(tmp_workdir), "Seestar_result")
         save_call = [args for args in mock_siril.cmd_calls if args[0] == "save"][0]
         assert save_call[1] == "stacked/Seestar_result"
+
+
+def _make_fits_header(keywords):
+    """Build a minimal FITS primary header block from keyword dict."""
+    cards = ["SIMPLE  =                    T".ljust(80)]
+    cards.append("BITPIX  =                   16".ljust(80))
+    cards.append("NAXIS   =                    0".ljust(80))
+    for key, val in keywords.items():
+        if isinstance(val, float):
+            card = f"{key.ljust(8)}= {val:20.6f}"
+        elif isinstance(val, int):
+            card = f"{key.ljust(8)}= {val:20d}"
+        else:
+            card = f"{key.ljust(8)}= '{val}'"
+        cards.append(card.ljust(80))
+    cards.append("END".ljust(80))
+    header = "".join(cards).encode("ascii")
+    # Pad to multiple of 2880 bytes
+    remainder = len(header) % 2880
+    if remainder:
+        header += b" " * (2880 - remainder)
+    return header
+
+
+class TestReadFitsKeyword:
+    def test_reads_float(self, tmp_path):
+        fits = tmp_path / "test.fit"
+        fits.write_bytes(_make_fits_header({"LIVETIME": 5400.0}))
+        assert read_fits_keyword(str(fits), "LIVETIME") == 5400.0
+
+    def test_reads_string(self, tmp_path):
+        fits = tmp_path / "test.fit"
+        fits.write_bytes(_make_fits_header({"INSTRUME": "Seestar"}))
+        assert read_fits_keyword(str(fits), "INSTRUME") == "Seestar"
+
+    def test_missing_keyword(self, tmp_path):
+        fits = tmp_path / "test.fit"
+        fits.write_bytes(_make_fits_header({"EXPTIME": 10.0}))
+        assert read_fits_keyword(str(fits), "LIVETIME") is None
+
+    def test_missing_file(self, tmp_path):
+        assert read_fits_keyword(str(tmp_path / "nope.fit"), "LIVETIME") is None
+
+
+class TestFormatIntegrationTime:
+    def test_hours(self):
+        assert format_integration_time(5400.0) == "1h30m00s"
+
+    def test_minutes(self):
+        assert format_integration_time(750.0) == "12m30s"
+
+    def test_seconds_only(self):
+        assert format_integration_time(30.0) == "30s"
+
+    def test_none(self):
+        assert format_integration_time(None) is None
+
+    def test_zero(self):
+        assert format_integration_time(0) is None
+
+    def test_negative(self):
+        assert format_integration_time(-10) is None

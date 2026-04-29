@@ -7,7 +7,7 @@ platesolve:
   limit_mag: 18
 
 spcc:
-  sensor: "IMX462"
+  sensor: "ZWO Seestar S50"
   filter: "UV/IR Block"
 
 stacking:
