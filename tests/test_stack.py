@@ -89,7 +89,7 @@ class TestStackCalibrationMasters:
 
 
 class TestConvertAndCalibrateLights:
-    def test_no_masters(self, mock_siril, tmp_workdir):
+    def test_no_masters_debayers_during_convert(self, mock_siril, tmp_workdir):
         masters = {"dark": None, "flat": None, "bias": None}
         seq = convert_and_calibrate_lights(
             mock_siril, str(tmp_workdir), DEFAULT_CONFIG, masters
@@ -98,8 +98,11 @@ class TestConvertAndCalibrateLights:
         # Should not call calibrate
         cmds = [args[0] for args in mock_siril.cmd_calls]
         assert "calibrate" not in cmds
+        # Should debayer during convert
+        convert_call = [args for args in mock_siril.cmd_calls if args[0] == "convert"][0]
+        assert "-debayer" in convert_call
 
-    def test_dark_only(self, mock_siril, tmp_workdir):
+    def test_dark_only_debayers_during_calibrate(self, mock_siril, tmp_workdir):
         masters = {"dark": "dark_stacked", "flat": None, "bias": None}
         seq = convert_and_calibrate_lights(
             mock_siril, str(tmp_workdir), DEFAULT_CONFIG, masters
@@ -111,6 +114,11 @@ class TestConvertAndCalibrateLights:
         assert len(calibrate_calls) == 1
         cal_args = " ".join(str(a) for a in calibrate_calls[0])
         assert "-dark=dark_stacked" in cal_args
+        assert "-cfa" in cal_args
+        assert "-debayer" in cal_args
+        # Convert should NOT debayer (CFA preserved for calibration)
+        convert_call = [args for args in mock_siril.cmd_calls if args[0] == "convert"][0]
+        assert "-debayer" not in convert_call
 
     def test_full_masters(self, mock_siril, tmp_workdir):
         masters = {
@@ -129,6 +137,8 @@ class TestConvertAndCalibrateLights:
         assert "-dark=dark_stacked" in cal_args
         assert "-flat=pp_flat_stacked" in cal_args
         assert "-bias=bias_stacked" in cal_args
+        assert "-cfa" in cal_args
+        assert "-debayer" in cal_args
 
 
 class TestRegisterSequence:

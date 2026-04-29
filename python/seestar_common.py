@@ -194,8 +194,6 @@ def convert_and_calibrate_lights(siril, workdir, config, masters):
         The sequence name prefix to use for registration (e.g. 'light' or 'pp_light').
     """
     siril.cmd("cd", os.path.join(workdir, "lights"))
-    siril.cmd("convert", "light", "-out=../process")
-    siril.cmd("cd", os.path.join(workdir, "process"))
 
     # Build calibrate arguments from available masters
     cal_args = []
@@ -207,9 +205,15 @@ def convert_and_calibrate_lights(siril, workdir, config, masters):
         cal_args.extend([f"-bias={masters['bias']}"])
 
     if cal_args:
-        siril.cmd("calibrate", "light", *cal_args)
+        # Keep CFA data during convert, debayer after calibration
+        siril.cmd("convert", "light", "-out=../process")
+        siril.cmd("cd", os.path.join(workdir, "process"))
+        siril.cmd("calibrate", "light", *cal_args, "-cfa", "-debayer")
         return "pp_light"
     else:
+        # No calibration -- debayer during convert
+        siril.cmd("convert", "light", "-debayer", "-out=../process")
+        siril.cmd("cd", os.path.join(workdir, "process"))
         return "light"
 
 

@@ -22,7 +22,7 @@ requires 1.2.0
 
 # Convert light frames
 cd lights
-convert light -out=../process
+convert light -debayer -out=../process
 cd ../process
 
 # Register (align) all frames
