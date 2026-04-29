@@ -27,6 +27,10 @@ DEFAULT_CONFIG = {
     "platesolve": {
         "limit_mag": 18,
     },
+    "spcc": {
+        "sensor": "IMX462",
+        "filter": "UV/IR Block",
+    },
     "stacking": {
         "sigma_high": 3,
         "sigma_low": 3,
@@ -267,6 +271,7 @@ def post_process(siril, workdir, config):
     """
     optics = config["optics"]
     ps = config["platesolve"]
+    spcc_cfg = config["spcc"]
     bg = config["background_extraction"]
 
     siril.cmd("cd", workdir)
@@ -276,7 +281,9 @@ def post_process(siril, workdir, config):
               f"-pixelsize={optics['pixel_size']}",
               f"-limitmag={ps['limit_mag']}")
 
-    siril.cmd("spcc")
+    siril.cmd("spcc",
+              f"-oscsensor={spcc_cfg['sensor']}",
+              f'-oscfilter="{spcc_cfg["filter"]}"')
 
     siril.cmd("subsky", "-rbf",
               f"-smooth={bg['smooth']}",

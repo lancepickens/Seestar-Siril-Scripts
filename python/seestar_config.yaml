@@ -6,6 +6,10 @@ optics:
 platesolve:
   limit_mag: 18
 
+spcc:
+  sensor: "IMX462"
+  filter: "UV/IR Block"
+
 stacking:
   sigma_high: 3
   sigma_low: 3

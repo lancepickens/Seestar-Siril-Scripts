@@ -41,7 +41,8 @@ load process/r_light_stacked
 platesolve -focal=250 -pixelsize=2.9 -limitmag=18
 
 # Spectrophotometric Color Calibration
-spcc
+# Seestar S50: IMX462 sensor with UV/IR cut filter
+spcc -oscsensor=IMX462 -oscfilter="UV/IR Block"
 
 # Auto background extraction
 subsky -rbf -smooth=0.5 -samples=15
